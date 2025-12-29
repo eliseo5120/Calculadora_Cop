@@ -8,7 +8,10 @@
 <title>Calculadora COP</title>
 
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
 
 body{
   margin:0;
@@ -39,17 +42,16 @@ body{
   justify-content:flex-end;
 }
 
-/* HISTORIAL FIJO */
 .history{
   font-size:13px;
   color:#0a0;
   opacity:.75;
   text-align:right;
-  height:72px;              /* 🔒 altura fija */
+  height:72px;
   overflow-y:auto;
   display:flex;
   flex-direction:column;
-  justify-content:flex-end; /* ⬇ siempre abajo */
+  justify-content:flex-end;
 }
 
 .current{
@@ -58,16 +60,14 @@ body{
   word-break:break-all;
 }
 
-/* BOTONES */
+/* TECLADO */
 .grid{
   flex:1;
   margin-top:10px;
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  grid-template-rows: repeat(6, 1fr);
   gap:10px;
 }
-
 
 button{
   padding:18px;
@@ -78,17 +78,25 @@ button{
   box-shadow:0 2px 6px rgba(0,0,0,.1);
 }
 
-button:active{transform:scale(0.97)}
+button:active{
+  transform:scale(0.97);
+}
 
 .op{background:#ffd60a}
-.eq{
-  background:#007aff;
-  color:#fff;
-  grid-column:span 4;
-  grid-row: 6;
-}
 .clear{background:#ff3b30;color:#fff}
 
+/* BOTÓN IGUAL FIJO ABAJO */
+.eq{
+  margin-top:auto;
+  width:100%;
+  background:#007aff;
+  color:#fff;
+  font-size:24px;
+  padding:20px;
+  border-radius:18px;
+}
+
+/* BOTÓN BORRAR HISTORIAL */
 .clear-history{
   margin-top:6px;
   background:#ff3b30;
@@ -104,6 +112,7 @@ button:active{transform:scale(0.97)}
 <body>
 <div class="app">
 
+<!-- DISPLAY -->
 <div class="display">
   <div class="history" id="history"></div>
   <div class="current" id="display">0</div>
@@ -111,34 +120,36 @@ button:active{transform:scale(0.97)}
 
 <button class="clear-history" onclick="clearHistory()">Borrar historial</button>
 
+<!-- TECLADO -->
 <div class="grid">
-<button class="clear" onclick="clearAll()">C</button>
-<button onclick="backspace()">⌫</button>
-<button onclick="append('%')">%</button>
-<button class="op" onclick="append('/')">÷</button>
+  <button class="clear" onclick="clearAll()">C</button>
+  <button onclick="backspace()">⌫</button>
+  <button onclick="append('%')">%</button>
+  <button class="op" onclick="append('/')">÷</button>
 
-<button onclick="append('7')">7</button>
-<button onclick="append('8')">8</button>
-<button onclick="append('9')">9</button>
-<button class="op" onclick="append('*')">×</button>
+  <button onclick="append('7')">7</button>
+  <button onclick="append('8')">8</button>
+  <button onclick="append('9')">9</button>
+  <button class="op" onclick="append('*')">×</button>
 
-<button onclick="append('4')">4</button>
-<button onclick="append('5')">5</button>
-<button onclick="append('6')">6</button>
-<button class="op" onclick="append('-')">−</button>
+  <button onclick="append('4')">4</button>
+  <button onclick="append('5')">5</button>
+  <button onclick="append('6')">6</button>
+  <button class="op" onclick="append('-')">−</button>
 
-<button onclick="append('1')">1</button>
-<button onclick="append('2')">2</button>
-<button onclick="append('3')">3</button>
-<button class="op" onclick="append('+')">+</button>
+  <button onclick="append('1')">1</button>
+  <button onclick="append('2')">2</button>
+  <button onclick="append('3')">3</button>
+  <button class="op" onclick="append('+')">+</button>
 
-<button onclick="append('0')">0</button>
-<button onclick="append('00')">00</button>
-<button onclick="append('000')">000</button>
-<button onclick="append('.')">.</button>
-
-<button class="eq" onclick="calculate()">=</button>
+  <button onclick="append('0')">0</button>
+  <button onclick="append('00')">00</button>
+  <button onclick="append('000')">000</button>
+  <button onclick="append('.')">.</button>
 </div>
+
+<!-- IGUAL PEGADO AL BORDE -->
+<button class="eq" onclick="calculate()">=</button>
 
 </div>
 
@@ -193,10 +204,11 @@ function calculate(){
   try{
     let clean = expression.replace(/\./g,'');
     clean = clean.replace(/%/g,'/100');
+
     const result = Function('"use strict";return (' + clean + ')')();
 
     history.push(formatCOP(clean) + ' = ' + formatCOP(result));
-    if(history.length > 6) history.shift(); // 🧹 elimina antiguos
+    if(history.length > 6) history.shift();
 
     localStorage.setItem('calcHistory', JSON.stringify(history));
 
@@ -213,7 +225,7 @@ function calculate(){
 
 function renderHistory(){
   historyDiv.innerHTML = history.join('<br>');
-  historyDiv.scrollTop = historyDiv.scrollHeight; // ⬇ siempre al último
+  historyDiv.scrollTop = historyDiv.scrollHeight;
 }
 
 function clearHistory(){
