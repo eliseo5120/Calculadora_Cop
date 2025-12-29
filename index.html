@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calc COP">
+<title>Calculadora COP</title>
+
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#f2f2f7;
+}
+
+.app{
+  flex:1;
+  max-width:420px;
+  margin:auto;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
+
+/* DISPLAY + HISTORIAL */
+.display{
+  background:#000;
+  color:#0f0;
+  border-radius:18px;
+  padding:14px;
+  min-height:140px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+
+/* HISTORIAL FIJO */
+.history{
+  font-size:13px;
+  color:#0a0;
+  opacity:.75;
+  text-align:right;
+  height:72px;              /* 🔒 altura fija */
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end; /* ⬇ siempre abajo */
+}
+
+.current{
+  font-size:clamp(28px,6vw,36px);
+  text-align:right;
+  word-break:break-all;
+}
+
+/* BOTONES */
+.grid{
+  flex:1;
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+button{
+  padding:18px;
+  font-size:clamp(18px,4vw,22px);
+  border:none;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+button:active{transform:scale(0.97)}
+
+.op{background:#ffd60a}
+.eq{
+  background:#007aff;
+  color:#fff;
+  grid-column:span 4;
+}
+.clear{background:#ff3b30;color:#fff}
+
+.clear-history{
+  margin-top:6px;
+  background:#ff3b30;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-size:12px;
+  padding:4px;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<div class="display">
+  <div class="history" id="history"></div>
+  <div class="current" id="display">0</div>
+</div>
+
+<button class="clear-history" onclick="clearHistory()">Borrar historial</button>
+
+<div class="grid">
+<button class="clear" onclick="clearAll()">C</button>
+<button onclick="backspace()">⌫</button>
+<button onclick="append('%')">%</button>
+<button class="op" onclick="append('/')">÷</button>
+
+<button onclick="append('7')">7</button>
+<button onclick="append('8')">8</button>
+<button onclick="append('9')">9</button>
+<button class="op" onclick="append('*')">×</button>
+
+<button onclick="append('4')">4</button>
+<button onclick="append('5')">5</button>
+<button onclick="append('6')">6</button>
+<button class="op" onclick="append('-')">−</button>
+
+<button onclick="append('1')">1</button>
+<button onclick="append('2')">2</button>
+<button onclick="append('3')">3</button>
+<button class="op" onclick="append('+')">+</button>
+
+<button onclick="append('0')">0</button>
+<button onclick="append('00')">00</button>
+<button onclick="append('000')">000</button>
+<button onclick="append('.')">.</button>
+
+<button class="eq" onclick="calculate()">=</button>
+</div>
+
+</div>
+
+<script>
+let expression = '';
+let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
+let justCalculated = false;
+
+const display = document.getElementById('display');
+const historyDiv = document.getElementById('history');
+
+renderHistory();
+
+function formatCOP(value){
+  const parts = value.toString().split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return parts.join('.');
+}
+
+function update(){
+  display.innerText = expression
+    ? formatCOP(expression.replace(/\./g,''))
+    : '0';
+}
+
+function append(val){
+  const isNumber = /[0-9.]/.test(val);
+
+  if(justCalculated && isNumber){
+    expression = '';
+  }
+
+  if(val === '.' && expression.includes('.')) return;
+
+  expression += val;
+  justCalculated = false;
+  update();
+}
+
+function backspace(){
+  expression = expression.slice(0,-1);
+  update();
+}
+
+function clearAll(){
+  expression = '';
+  justCalculated = false;
+  update();
+}
+
+function calculate(){
+  try{
+    let clean = expression.replace(/\./g,'');
+    clean = clean.replace(/%/g,'/100');
+    const result = Function('"use strict";return (' + clean + ')')();
+
+    history.push(formatCOP(clean) + ' = ' + formatCOP(result));
+    if(history.length > 6) history.shift(); // 🧹 elimina antiguos
+
+    localStorage.setItem('calcHistory', JSON.stringify(history));
+
+    expression = String(result);
+    justCalculated = true;
+    renderHistory();
+    update();
+  }catch{
+    display.innerText = 'Error';
+    expression = '';
+    justCalculated = false;
+  }
+}
+
+function renderHistory(){
+  historyDiv.innerHTML = history.join('<br>');
+  historyDiv.scrollTop = historyDiv.scrollHeight; // ⬇ siempre al último
+}
+
+function clearHistory(){
+  history = [];
+  localStorage.removeItem('calcHistory');
+  renderHistory();
+}
+
+/* TECLADO PC */
+document.addEventListener('keydown', e=>{
+  if(e.key >= '0' && e.key <= '9') append(e.key);
+  if(['+','-','*','/','%','.'].includes(e.key)) append(e.key);
+  if(e.key === 'Enter'){ e.preventDefault(); calculate(); }
+  if(e.key === 'Backspace'){ e.preventDefault(); backspace(); }
+  if(e.key === 'Escape') clearAll();
+});
+</script>
+
+</body>
+</html>
