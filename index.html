@@ -45,13 +45,13 @@ body{
 }
 
 .history{
-  font-size:13px;
+  font-size:clamp(18px,4vw,22px);
   color:#0a0;
-  opacity:.75;
+  opacity:.74;
   text-align:right;
-  height:72px;
-  overflow:hidden; /* no empuja la app */
-  display:flex;
+  height:200px;
+  overflow:flex; /* no empuja la app */
+  display:hidden;
   flex-direction:column;
   justify-content:flex-end;
 }
@@ -100,7 +100,7 @@ button:active{
 
 /* BOTÓN IGUAL */
 .eq{
-  margin-top:auto; /* 🔥 empuja al fondo */
+  margin-top:10px; /* 🔥 empuja al fondo */
   width:100%;
   background:#007aff;
   color:#fff;
@@ -247,3 +247,4 @@ document.addEventListener('keydown', e=>{
 
 </body>
 </html>
+
