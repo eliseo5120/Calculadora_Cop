@@ -57,10 +57,13 @@ body{
 }
 
 .current{
-  font-size:clamp(36px,8vw,52px);
+  font-size:40px;
+  line-height:1.1;
   text-align:right;
   word-break:break-all;
+  transition: font-size 0.15s ease;
 }
+
 
 /* BOTÓN BORRAR HISTORIAL */
 .clear-history{
@@ -199,7 +202,23 @@ function update(){
   });
 
   display.innerText = formatted.join('');
+
+  adjustFontSize(display.innerText);
+
 }
+
+function adjustFontSize(text){
+  const length = text.replace(/[^\d]/g,'').length;
+
+  let size = 40;
+
+  if(length > 12) size = 34;
+  if(length > 16) size = 28;
+  if(length > 20) size = 22;
+
+  display.style.fontSize = size + 'px';
+}
+
 
 
 function append(val){
@@ -326,3 +345,4 @@ document.addEventListener('keydown', e=>{
 
 </body>
 </html>
+
