@@ -147,7 +147,7 @@ button:active{
   <button onclick="append('0')">0</button>
   <button onclick="append('00')">00</button>
   <button onclick="append('000')">000</button>
-  <button onclick="append('.')">.</button>
+  <button onclick="append(',')">,</button>
 </div>
 
 <!-- IGUAL ABAJO -->
@@ -172,24 +172,71 @@ function formatCOP(value){
 }
 
 function update(){
-  display.innerText = expression
-    ? formatCOP(expression.replace(/\./g,''))
-    : '0';
+  if(!expression){
+    display.innerText = '0';
+    return;
+  }
+
+  // separar números y operadores
+  const tokens = expression.split(/([+\-*/])/);
+
+  const formatted = tokens.map(token=>{
+    // si es operador, devolver tal cual
+    if(/[+\-*/]/.test(token)) return token;
+
+    // manejar decimales con coma
+    let [intPart, decPart] = token.split(',');
+
+    // quitar puntos de miles previos
+    intPart = intPart.replace(/\./g,'');
+
+    // formatear miles
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+
+    return decPart !== undefined
+      ? intPart + ',' + decPart
+      : intPart;
+  });
+
+  display.innerText = formatted.join('');
 }
 
+
 function append(val){
-  const isNumber = /[0-9.]/.test(val);
+  const isNumber = /[0-9,]/.test(val);
+  const lastChar = expression.slice(-1);
 
   if(justCalculated && isNumber){
     expression = '';
   }
 
-  if(val === '.' && expression.includes('.')) return;
+  // COMA DECIMAL
+  if(val === ','){
+    // separar por operadores y tomar el último número
+    const parts = expression.split(/[+\-*/]/);
+    const lastNumber = parts[parts.length - 1];
 
+    // si el número ya tiene coma → no permitir otra
+    if(lastNumber.includes(',')) return;
+
+    // si está vacío o viene después de operador → 0,
+    if(!lastNumber || /[+\-*/]$/.test(expression)){
+      expression += '0,';
+    }else{
+      expression += ',';
+    }
+
+    justCalculated = false;
+    update();
+    return;
+  }
+
+  // números normales
   expression += val;
   justCalculated = false;
   update();
 }
+
 
 function backspace(){
   expression = expression.slice(0,-1);
@@ -202,20 +249,51 @@ function clearAll(){
   update();
 }
 
+function formatVisual(text){
+  return text.split(/([+\-*/=])/).map(part=>{
+    // si no tiene números, devolver tal cual
+    if(!/[0-9]/.test(part)) return part;
+
+    // separar decimal por coma
+    let [intPart, decPart] = part.split(',');
+
+    // quitar puntos previos
+    intPart = intPart.replace(/\./g,'');
+
+    // agregar miles
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+
+    return decPart !== undefined
+      ? intPart + ',' + decPart
+      : intPart;
+  }).join('');
+}
+
 function calculate(){
   try{
-    let clean = expression.replace(/\./g,'');
-    clean = clean.replace(/%/g,'/100');
+    // limpiar expresión para cálculo
+    let clean = expression
+      .replace(/\./g,'')   // quitar miles
+      .replace(/,/g,'.')   // coma → punto
+      .replace(/%/g,'/100');
 
     const result = Function('"use strict";return (' + clean + ')')();
 
-    history.push(formatCOP(clean) + ' = ' + formatCOP(result));
-    if(history.length > 6) history.shift();
+    // guardar historial (solo visual)
+    history.push(
+  formatVisual(expression) +
+  ' = ' +
+  formatVisual(String(result).replace('.', ','))
+);
 
+
+    if(history.length > 6) history.shift();
     localStorage.setItem('calcHistory', JSON.stringify(history));
 
-    expression = String(result);
+    // resultado vuelve en formato de entrada (coma)
+    expression = String(result).replace('.', ',');
     justCalculated = true;
+
     renderHistory();
     update();
   }catch{
@@ -224,6 +302,7 @@ function calculate(){
     justCalculated = false;
   }
 }
+
 
 function renderHistory(){
   historyDiv.innerHTML = history.join('<br>');
@@ -238,7 +317,7 @@ function clearHistory(){
 /* TECLADO PC */
 document.addEventListener('keydown', e=>{
   if(e.key >= '0' && e.key <= '9') append(e.key);
-  if(['+','-','*','/','%','.'].includes(e.key)) append(e.key);
+  if(['+','-','*','/','%',','].includes(e.key)) append(e.key);
   if(e.key === 'Enter'){ e.preventDefault(); calculate(); }
   if(e.key === 'Backspace'){ e.preventDefault(); backspace(); }
   if(e.key === 'Escape') clearAll();
